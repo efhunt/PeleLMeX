@@ -18,6 +18,9 @@ getTransportCoeff(
   const bool do_soret,
   amrex::Real LeInv,
   amrex::Real PrInv,
+  const int num_custom_Le_species,
+  const amrex::Vector<amrex::Real>& custom_Le_species_values,
+  const amrex::Vector<int>& custom_Le_species_index,
   amrex::Array4<const amrex::Real> const& rhoY,
   amrex::Array4<const amrex::Real> const& T,
   amrex::Array4<amrex::Real> const& rhoDi,
@@ -101,15 +104,23 @@ getTransportCoeff(
         rhotheta(i, j, k, n) = -rhoDi_cgs[n] * chi_loc[n] * 1.0e-1_rt;
       }
     }
+    if (num_custom_Le_species > 0) { // modify species Le if requested
+      amrex::Real cpmix_cgs = 0.0_rt;
+      eos.TY2Cp(T(i, j, k), y, cpmix_cgs);
+      for (int index = 0; index < num_custom_Le_species; index++) {
+        rhoDi(i, j, k, custom_Le_species_index[index]) =
+          1.0e-1_rt * lambda_cgs /
+          (cpmix_cgs * custom_Le_species_values[index]);
+      }
+    }
     if (do_soret) {
 #if defined(H2_ID) && defined(H_ID)
       // Soret coefficient scaling, see Howarth, Day, Pitsch & Aspden
       rhotheta(i, j, k, H2_ID) *= 0.664;
       rhotheta(i, j, k, H_ID) *= 0.58;
 #else
-      amrex::Abort(
-        "Running with Soret without light species, waste of time "
-        "and memory...");
+      amrex::Abort("Running with Soret without light species, waste of time "
+                   "and memory...");
 #endif
     }
   }
@@ -126,6 +137,9 @@ getTransportCoeff<pele::physics::eos::Manifold>(
   const bool do_soret,
   amrex::Real /*LeInv*/,
   amrex::Real /*PrInv*/,
+  const int /*num_custom_Le_species*/,
+  const amrex::Vector<amrex::Real>& /*custom_Le_species_values*/,
+  const amrex::Vector<int>& /*custom_Le_species_index*/,
   amrex::Array4<const amrex::Real> const& rhoY,
   amrex::Array4<const amrex::Real> const& T,
   amrex::Array4<amrex::Real> const& rhoDi,
@@ -1407,14 +1421,10 @@ getTurbViscSigma(
     // Singular values:
     amrex::Real sigma1 = std::sqrt(
       std::max(0.0, I[0] / 3.0 + 2.0 * std::sqrt(alpha1) * std::cos(alpha3)));
-    amrex::Real sigma2 = std::sqrt(
-      std::max(
-        0.0,
-        I[0] / 3.0 - 2.0 * std::sqrt(alpha1) * std::cos(Pi / 3.0 + alpha3)));
-    amrex::Real sigma3 = std::sqrt(
-      std::max(
-        0.0,
-        I[0] / 3.0 - 2.0 * std::sqrt(alpha1) * std::cos(Pi / 3.0 - alpha3)));
+    amrex::Real sigma2 = std::sqrt(std::max(
+      0.0, I[0] / 3.0 - 2.0 * std::sqrt(alpha1) * std::cos(Pi / 3.0 + alpha3)));
+    amrex::Real sigma3 = std::sqrt(std::max(
+      0.0, I[0] / 3.0 - 2.0 * std::sqrt(alpha1) * std::cos(Pi / 3.0 - alpha3)));
 
     // Sort
     sigma2 = std::max(sigma3, sigma2);

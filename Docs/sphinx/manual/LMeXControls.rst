@@ -299,6 +299,9 @@ Transport coefficients and LES
     peleLM.Schmidt = 0.7                   # [OPT, DEF=0.7] If doing LES, specifies the Schmidt number
     peleLM.Lewis = 1.0                     # [OPT, DEF=1.0] If fixed_Le, specifies the Lewis number
 
+    peleLM.custom_Le_species_names = H2 ..    # [OPT, DEF="None"] Names of species with a modified Lewis number (does not work with fixed_Pr, Lewis or Schmidt).
+    peleLM.custom_Le_species_values = 0.7 ..  # [OPT, DEF="None"] Modified Lewis number values with the listed species names.    
+    
     peleLM.les_model = "None"              # [OPT, DEF="None"] Model to compute turbulent viscosity: None, Smagorinsky, WALE, Sigma
     peleLM.les_cs_smag = 0.18              # [OPT, DEF=0.18] If using Smagorinsky LES model, provides model coefficient
     peleLM.les_cm_wale = 0.60              # [OPT, DEF=0.60] If using WALE LES model, provides model coefficient

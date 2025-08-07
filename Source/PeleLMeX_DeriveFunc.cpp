@@ -286,10 +286,9 @@ pelelmex_dermgvort(
   int /*level*/)
 
 {
-  AMREX_D_TERM(
-    const amrex::Real idx = geom.InvCellSize(0);
-    , const amrex::Real idy = geom.InvCellSize(1);
-    , const amrex::Real idz = geom.InvCellSize(2););
+  AMREX_D_TERM(const amrex::Real idx = geom.InvCellSize(0);
+               , const amrex::Real idy = geom.InvCellSize(1);
+               , const amrex::Real idz = geom.InvCellSize(2););
 
   auto const& dat_arr = statefab.const_array();
   auto const& vort_arr = derfab.array(dcomp);
@@ -449,10 +448,9 @@ pelelmex_dervort(
   AMREX_ASSERT(derfab.box().contains(bx));
   AMREX_ASSERT(statefab.box().contains(bx));
   AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
-  AMREX_D_TERM(
-    const amrex::Real idx = geom.InvCellSize(0);
-    , const amrex::Real idy = geom.InvCellSize(1);
-    , const amrex::Real idz = geom.InvCellSize(2););
+  AMREX_D_TERM(const amrex::Real idx = geom.InvCellSize(0);
+               , const amrex::Real idy = geom.InvCellSize(1);
+               , const amrex::Real idz = geom.InvCellSize(2););
 
   auto const& dat_arr = statefab.const_array();
   auto const& vort_arr = derfab.array(dcomp);
@@ -624,10 +622,9 @@ pelelmex_dercoord(
   amrex::ignore_unused(ncomp);
   AMREX_ASSERT(derfab.box().contains(bx));
   AMREX_ASSERT(derfab.nComp() >= dcomp + ncomp);
-  AMREX_D_TERM(
-    const amrex::Real dx = geom.CellSize(0);
-    , const amrex::Real dy = geom.CellSize(1);
-    , const amrex::Real dz = geom.CellSize(2););
+  AMREX_D_TERM(const amrex::Real dx = geom.CellSize(0);
+               , const amrex::Real dy = geom.CellSize(1);
+               , const amrex::Real dz = geom.CellSize(2););
 
   auto const& coord_arr = derfab.array(dcomp);
   const auto geomdata = geom.data();
@@ -711,10 +708,9 @@ pelelmex_derQcrit(
 
 {
 #if AMREX_SPACEDIM == 3
-  AMREX_D_TERM(
-    const amrex::Real idx = geom.InvCellSize(0);
-    , const amrex::Real idy = geom.InvCellSize(1);
-    , const amrex::Real idz = geom.InvCellSize(2););
+  AMREX_D_TERM(const amrex::Real idx = geom.InvCellSize(0);
+               , const amrex::Real idy = geom.InvCellSize(1);
+               , const amrex::Real idz = geom.InvCellSize(2););
 
   auto const& dat_arr = statefab.const_array();
   auto const& qcrit_arr = derfab.array(dcomp);
@@ -981,10 +977,9 @@ pelelmex_derenstrophy(
   int /*level*/)
 
 {
-  AMREX_D_TERM(
-    const amrex::Real idx = geom.InvCellSize(0);
-    , const amrex::Real idy = geom.InvCellSize(1);
-    , const amrex::Real idz = geom.InvCellSize(2););
+  AMREX_D_TERM(const amrex::Real idx = geom.InvCellSize(0);
+               , const amrex::Real idy = geom.InvCellSize(1);
+               , const amrex::Real idz = geom.InvCellSize(2););
 
   auto const& dat_arr = statefab.const_array(VELX);
   auto const& rho_arr = (a_pelelm->m_incompressible) != 0
@@ -1372,6 +1367,11 @@ pelelmex_derdiffc(
   bool do_fixed_Le = (a_pelelm->m_fixed_Le != 0);
   bool do_fixed_Pr = (a_pelelm->m_fixed_Pr != 0);
   bool do_soret = (a_pelelm->m_use_soret != 0);
+  const int num_custom_Le_species = a_pelelm->m_num_custom_Le_species;
+  const amrex::Vector<amrex::Real>& custom_Le_species_values =
+    a_pelelm->m_custom_Le_species_values;
+  const amrex::Vector<int>& custom_Le_species_index =
+    a_pelelm->m_custom_Le_species_index;
   FArrayBox dummies(bx, NUM_SPECIES + 2, The_Async_Arena());
   auto const& rhoY = statefab.const_array(FIRSTSPEC);
   auto const& T = statefab.array(TEMP);
@@ -1389,8 +1389,10 @@ pelelmex_derdiffc(
          rhotheta, lambda, mu, ltransparm,
          leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
       getTransportCoeff<pele::physics::PhysicsType::eos_type>(
-        i, j, k, do_fixed_Le, do_fixed_Pr, do_soret, LeInv, PrInv, rhoY, T,
-        rhoD, rhotheta, lambda, mu, ltransparm, leosparm);
+        i, j, k, do_fixed_Le, do_fixed_Pr, do_soret, LeInv, PrInv,
+        num_custom_Le_species, custom_Le_species_values,
+        custom_Le_species_index, rhoY, T, rhoD, rhotheta, lambda, mu,
+        ltransparm, leosparm);
     });
 }
 
@@ -1419,6 +1421,11 @@ pelelmex_derlambda(
   bool do_fixed_Le = (a_pelelm->m_fixed_Le != 0);
   bool do_fixed_Pr = (a_pelelm->m_fixed_Pr != 0);
   bool do_soret = (a_pelelm->m_use_soret != 0);
+  const int num_custom_Le_species = a_pelelm->m_num_custom_Le_species;
+  const amrex::Vector<amrex::Real>& custom_Le_species_values =
+    a_pelelm->m_custom_Le_species_values;
+  const amrex::Vector<int>& custom_Le_species_index =
+    a_pelelm->m_custom_Le_species_index;
   FArrayBox dummies(bx, 2 * NUM_SPECIES + 1, The_Async_Arena());
   auto const& rhoY = statefab.const_array(FIRSTSPEC);
   auto const& T = statefab.array(TEMP);
@@ -1435,8 +1442,10 @@ pelelmex_derlambda(
          rhotheta, lambda, mu, ltransparm,
          leosparm] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
       getTransportCoeff<pele::physics::PhysicsType::eos_type>(
-        i, j, k, do_fixed_Le, do_fixed_Pr, do_soret, LeInv, PrInv, rhoY, T,
-        rhoD, rhotheta, lambda, mu, ltransparm, leosparm);
+        i, j, k, do_fixed_Le, do_fixed_Pr, do_soret, LeInv, PrInv,
+        num_custom_Le_species, custom_Le_species_values,
+        custom_Le_species_index, rhoY, T, rhoD, rhotheta, lambda, mu,
+        ltransparm, leosparm);
     });
 }
 

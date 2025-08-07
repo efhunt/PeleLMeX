@@ -1984,6 +1984,11 @@ public:
   int m_fixed_Pr = 0;
   int m_fixed_Le = 0;
 
+  int m_num_custom_Le_species = 0;
+  amrex::Vector<amrex::Real> m_custom_Le_species_values;
+  amrex::Vector<std::string> m_custom_Le_species_names;
+  amrex::Vector<int> m_custom_Le_species_index;
+
   amrex::Real m_Lewis_inv = 1.0;
   amrex::Real m_Prandtl_inv = 1.0 / 0.7;
   amrex::Real m_Schmidt_inv = 1.0 / 0.7;

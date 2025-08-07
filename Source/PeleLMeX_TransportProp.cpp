@@ -295,6 +295,12 @@ PeleLM::calcDiffusivity(const TimeStamp& a_time)
   // pass soret array, or pass mu as dummy (won't do anything)
   const int soret_idx = do_soret ? 1 : 0;
 
+  // pass user defined species Lewis number
+  const int num_custom_Le_species = m_num_custom_Le_species;
+  const amrex::Vector<amrex::Real>& custom_Le_species_values =
+    m_custom_Le_species_values;
+  const amrex::Vector<int>& custom_Le_species_index = m_custom_Le_species_index;
+
   // Transport data pointer
   auto const* ltransparm = trans_parms.device_parm();
   auto const* leosparm = eos_parms.device_parm();
@@ -322,6 +328,9 @@ PeleLM::calcDiffusivity(const TimeStamp& a_time)
       [=] AMREX_GPU_DEVICE(int box_no, int i, int j, int k) noexcept {
         getTransportCoeff<pele::physics::PhysicsType::eos_type>(
           i, j, k, do_fixed_Le, do_fixed_Pr, do_soret, Le_inv, Pr_inv,
+          Array4<Real const>(sma[box_no], FIRSTSPEC), num_custom_Le_species,
+          custom_Le_species_values, custom_Le_species_index,
+          Array4<Real const>(sma[box_no], FIRSTSPEC),
           Array4<Real const>(sma[box_no], FIRSTSPEC),
           Array4<Real const>(sma[box_no], TEMP), Array4<Real>(dma[box_no], 0),
           Array4<Real>(dma[box_no], NUM_SPECIES + 1 + soret_idx),
@@ -482,9 +491,8 @@ PeleLM::getDiffusivity(
         amrex::MultiFab::Add(
           beta_ec[idim], ldata_p->lambda_turb_fc[idim], 0, 0, 1, 0);
       } else { // Invalid
-        amrex::Abort(
-          "getDiffusivity(): LES model is on but cannot provide a "
-          "turbulent transport coefficient");
+        amrex::Abort("getDiffusivity(): LES model is on but cannot provide a "
+                     "turbulent transport coefficient");
       }
     }
   }
